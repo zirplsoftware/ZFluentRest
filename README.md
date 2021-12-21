@@ -1,1 +1,1 @@
-# ZFluentRest
+# ZFluentRestClient
