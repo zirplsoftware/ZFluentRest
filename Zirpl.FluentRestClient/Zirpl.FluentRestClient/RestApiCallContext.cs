@@ -164,7 +164,7 @@ namespace Zirpl.FluentRestClient
 
                 if (_retryCount > 0)
                 {
-                    await new AsyncRetrier(_retryCount)
+                    await new AsyncRetrier(_retryCount + 1)
                     {
                         Action = action
                     }.ExecuteAsync();
@@ -210,7 +210,7 @@ namespace Zirpl.FluentRestClient
 
                 if (_retryCount > 0)
                 {
-                    await new AsyncRetrier(_retryCount)
+                    await new AsyncRetrier(_retryCount + 1)
                     {
                         Action = action
                     }.ExecuteAsync();
@@ -256,7 +256,7 @@ namespace Zirpl.FluentRestClient
 
                 if (_retryCount > 0)
                 {
-                    await new AsyncRetrier(_retryCount)
+                    await new AsyncRetrier(_retryCount + 1)
                     {
                         Action = action
                     }.ExecuteAsync();
@@ -303,7 +303,7 @@ namespace Zirpl.FluentRestClient
 
                 if (_retryCount > 0)
                 {
-                    await new AsyncRetrier(_retryCount)
+                    await new AsyncRetrier(_retryCount + 1)
                     {
                         Action = action
                     }.ExecuteAsync();
@@ -349,7 +349,7 @@ namespace Zirpl.FluentRestClient
 
                 if (_retryCount > 0)
                 {
-                    await new AsyncRetrier(_retryCount)
+                    await new AsyncRetrier(_retryCount + 1)
                     {
                         Action = action
                     }.ExecuteAsync();
