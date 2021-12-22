@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 namespace Zirpl.FluentRestClient
 {
     [Serializable]
-    public class UnexpectedApiResponseException : ApiException
+    public class UnexpectedRestApiResponseException : RestApiException
     {
         //
         // For guidelines regarding the creation of new exception types, see
@@ -12,19 +12,19 @@ namespace Zirpl.FluentRestClient
         //    http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dncscol/html/csharp07192001.asp
         //
 
-        public UnexpectedApiResponseException(IHttpCallContext callContext) : base(callContext)
+        public UnexpectedRestApiResponseException(RestApiCallContext callContext) : base(callContext)
         {
         }
 
-        public UnexpectedApiResponseException(IHttpCallContext callContext, string message) : base(callContext, message)
+        public UnexpectedRestApiResponseException(RestApiCallContext callContext, string message) : base(callContext, message)
         {
         }
 
-        public UnexpectedApiResponseException(IHttpCallContext callContext, string message, Exception inner) : base(callContext, message, inner)
+        public UnexpectedRestApiResponseException(RestApiCallContext callContext, string message, Exception inner) : base(callContext, message, inner)
         {
         }
 
-        protected UnexpectedApiResponseException(
+        protected UnexpectedRestApiResponseException(
             SerializationInfo info,
             StreamingContext context) : base(info, context)
         {

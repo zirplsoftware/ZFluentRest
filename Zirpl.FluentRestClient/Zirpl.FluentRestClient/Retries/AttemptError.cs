@@ -1,6 +1,6 @@
 namespace Zirpl.FluentRestClient.Retries
 {
-    public class AttemptError
+    internal class AttemptError
     {
         public AttemptError(int attemptNumber, Exception exception)
         {

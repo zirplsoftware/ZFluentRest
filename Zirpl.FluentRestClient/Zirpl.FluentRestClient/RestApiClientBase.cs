@@ -1,6 +1,6 @@
 namespace Zirpl.FluentRestClient
 {
-    public abstract class HttpApiClientBase : IDisposable
+    public abstract class RestApiClientBase : IDisposable
     {
         private HttpClient? _httpClient;
 
@@ -45,9 +45,9 @@ namespace Zirpl.FluentRestClient
 
         protected abstract HttpClient? CreateHttpClient();
 
-        protected virtual IHttpCallContext CreateCallContext()
+        protected virtual RestApiCallContext CreateCallContext()
         {
-            return new HttpCallContext(HttpClient);
+            return new RestApiCallContext(HttpClient);
         }
     }
 }

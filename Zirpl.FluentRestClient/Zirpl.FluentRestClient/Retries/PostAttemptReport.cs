@@ -1,6 +1,6 @@
 namespace Zirpl.FluentRestClient.Retries
 {
-    public class PostAttemptReport
+    internal class PostAttemptReport
     {
         public PostAttemptReport(int attemptNumber, int maxAttempts, bool wasSuccessful, Exception? exception)
         {

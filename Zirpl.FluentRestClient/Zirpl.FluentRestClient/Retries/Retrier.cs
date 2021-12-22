@@ -1,8 +1,6 @@
-using Zirpl.FluentRestClient.Logging;
-
 namespace Zirpl.FluentRestClient.Retries;
 
-public class Retrier
+internal class Retrier
 {
     private readonly List<AttemptError> _errors;
     private int _currentAttempt;
@@ -15,7 +13,7 @@ public class Retrier
 
     public Action<int> Action { get; set; }
     public Func<Exception, bool>? ShouldRetryEvaluator { get; set; }
-    public int MaxAttempts { get; set; }
+    public int MaxAttempts { get; }
     public Action<PostAttemptReport>? PostAttemptAction { get; set; }
 
     public void Execute()
@@ -31,10 +29,10 @@ public class Retrier
                && MaxAttempts > _currentAttempt)
         {
             _currentAttempt++;
-            if (_currentAttempt > 1)
-            {
-                this.GetLog().Warn($"Retrying attempt # {_currentAttempt} of {MaxAttempts} max attempts...");
-            }
+            //if (_currentAttempt > 1)
+            //{
+            //    this.GetLog().Warn($"Retrying attempt # {_currentAttempt} of {MaxAttempts} max attempts...");
+            //}
             try
             {
                 Action(_currentAttempt);

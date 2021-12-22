@@ -4,7 +4,7 @@ using System.Text;
 namespace Zirpl.FluentRestClient.Retries
 {
     [Serializable]
-    public class RetrierException : Exception
+    internal class RetrierException : Exception
     {
         //
         // For guidelines regarding the creation of new exception types, see
