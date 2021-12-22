@@ -18,6 +18,7 @@ namespace Zirpl.FluentRestClient
         private object _xmlRequestContent = null;
         private bool _hasRequestContent = false;
         private int _retryCount = 0;
+        private CancellationToken _cancellationToken;
 
         public RestApiCallContext(HttpClient httpClient)
         {
@@ -129,9 +130,10 @@ namespace Zirpl.FluentRestClient
             throw new NotImplementedException();
         }
 
-        public RestApiCallContext WithCancellationToken()
+        public RestApiCallContext WithCancellationToken(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            _cancellationToken = cancellationToken;
+            return this;
         }
 
         public async Task<RestApiCallContext> GetAsync()
@@ -151,8 +153,8 @@ namespace Zirpl.FluentRestClient
                 var action = new Func<int, Task>(async i =>
                 {
                     var url = _urlBuilder.ToString();
-                    HttpResponseMessage = await _httpClient.GetAsync(url);
-                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync();
+                    HttpResponseMessage = await _httpClient.GetAsync(url, _cancellationToken);
+                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
                     AssertSuccessfulStatusCode();
                 });
 
@@ -193,9 +195,9 @@ namespace Zirpl.FluentRestClient
                 {
                     var url = _urlBuilder.ToString();
                     var requestContent = GetRequestContent();
-                    HttpRequestBody = await requestContent.ReadAsStringAsync();
-                    HttpResponseMessage = await _httpClient.PostAsync(url, requestContent);
-                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync();
+                    HttpRequestBody = await requestContent.ReadAsStringAsync(_cancellationToken);
+                    HttpResponseMessage = await _httpClient.PostAsync(url, requestContent, _cancellationToken);
+                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
                     AssertSuccessfulStatusCode();
                 });
 
@@ -236,9 +238,9 @@ namespace Zirpl.FluentRestClient
                 {
                     var url = _urlBuilder.ToString();
                     var requestContent = GetRequestContent();
-                    HttpRequestBody = await requestContent.ReadAsStringAsync();
-                    HttpResponseMessage = await _httpClient.PutAsync(url, requestContent);
-                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync();
+                    HttpRequestBody = await requestContent.ReadAsStringAsync(_cancellationToken);
+                    HttpResponseMessage = await _httpClient.PutAsync(url, requestContent, _cancellationToken);
+                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
                     AssertSuccessfulStatusCode();
                 });
 
@@ -272,14 +274,18 @@ namespace Zirpl.FluentRestClient
             {
                 throw new InvalidOperationException("Cannot call more than one Http method");
             }
+            if (_hasRequestContent)
+            {
+                throw new InvalidOperationException("Cannot call Delete with content");
+            }
 
             try
             {
                 var action = new Func<int, Task>(async i =>
                 {
                     var url = _urlBuilder.ToString();
-                    HttpResponseMessage = await _httpClient.DeleteAsync(url);
-                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync();
+                    HttpResponseMessage = await _httpClient.DeleteAsync(url, _cancellationToken);
+                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
                     AssertSuccessfulStatusCode();
                 });
 
@@ -320,9 +326,9 @@ namespace Zirpl.FluentRestClient
                 {
                     var url = _urlBuilder.ToString();
                     var requestContent = GetRequestContent();
-                    HttpRequestBody = await requestContent.ReadAsStringAsync();
-                    HttpResponseMessage = await _httpClient.PatchAsync(url, requestContent);
-                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync();
+                    HttpRequestBody = await requestContent.ReadAsStringAsync(_cancellationToken);
+                    HttpResponseMessage = await _httpClient.PatchAsync(url, requestContent, _cancellationToken);
+                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
                     AssertSuccessfulStatusCode();
                 });
 
@@ -425,7 +431,14 @@ namespace Zirpl.FluentRestClient
 
             try
             {
-                throw new NotImplementedException();
+                var serializer = new XmlSerializer(typeof(T));
+                using (var responseBodyReader = new StringReader(HttpResponseBody))
+                {
+                    using (var reader = XmlReader.Create(responseBodyReader))
+                    {
+                        return (T)serializer.Deserialize(reader);
+                    }
+                }
             }
             catch (RestApiException)
             {
