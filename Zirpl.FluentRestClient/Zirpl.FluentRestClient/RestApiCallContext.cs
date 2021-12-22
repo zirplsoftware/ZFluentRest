@@ -325,52 +325,6 @@ namespace Zirpl.FluentRestClient
             return this;
         }
 
-        public async Task<RestApiCallContext> PatchAsync()
-        {
-            if (HttpResponseMessage != null)
-            {
-                throw new InvalidOperationException("Cannot call more than one Http method");
-            }
-
-            try
-            {
-                var action = new Func<int, Task>(async i =>
-                {
-                    var url = _urlBuilder.ToString();
-                    _logger?.Log($"Calling PATCH on {url}");
-                    var requestContent = GetRequestContent();
-                    HttpRequestBody = await requestContent.ReadAsStringAsync(_cancellationToken);
-                    _logger?.Log($"HTTPRequestBody: {HttpRequestBody}");
-                    HttpResponseMessage = await _httpClient.PatchAsync(url, requestContent, _cancellationToken);
-                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
-                    _logger?.Log($"HTTPResponseBody: {HttpResponseBody}");
-                    AssertSuccessfulStatusCode();
-                });
-
-                if (_retryCount > 0)
-                {
-                    await new AsyncRetrier(_retryCount + 1)
-                    {
-                        Action = action
-                    }.ExecuteAsync();
-                }
-                else
-                {
-                    await action(1);
-                }
-            }
-            catch (RestApiException)
-            {
-                throw;
-            }
-            catch (Exception e)
-            {
-                throw new RestApiException(this, "Unexpected error during Post operation", e);
-            }
-
-            return this;
-        }
-
         private HttpContent GetRequestContent()
         {
             if (_hasRequestContent)
