@@ -20,16 +20,17 @@ namespace Zirpl.FluentRestClient
         private int _retryCount = 0;
         private CancellationToken _cancellationToken;
         private IRestApiCallLogger _logger;
+        private IDictionary<string, string[]> _requestHeaders;
 
         public RestApiCallContext(HttpClient httpClient)
         {
             _httpClient = httpClient;
             _urlBuilder = new StringBuilder();
+            _requestHeaders = new Dictionary<string, string[]>();
         }
 
         public string Url => $"{_httpClient.BaseAddress}{_urlBuilder}";
         public string HttpRequestBody { get; private set; }
-        public bool LogRequestContent { get; private set; }
         public HttpResponseMessage HttpResponseMessage { get; private set; }
         public HttpStatusCode? HttpResponseStatusCode => HttpResponseMessage?.StatusCode;
         public string HttpResponseBody { get; private set; }
@@ -127,9 +128,17 @@ namespace Zirpl.FluentRestClient
             return this;
         }
 
-        public RestApiCallContext WithRequestHeader()
+        public RestApiCallContext WithRequestHeader(string name, params string[] values)
         {
-            
+            _requestHeaders.Add(name, values);
+            return this;
+        }
+
+        public RestApiCallContext WithBasicAuthentication(string username, string password)
+        {
+            var basicAuthenticationHeaderValue = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{username}:{password}"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", basicAuthenticationHeaderValue);
+            return this;
         }
 
         public RestApiCallContext WithCancellationToken(CancellationToken cancellationToken)
@@ -327,27 +336,23 @@ namespace Zirpl.FluentRestClient
 
         private HttpContent GetRequestContent()
         {
+            HttpContent requestContent = null;
             if (_hasRequestContent)
             {
                 if (_requestContent != null)
                 {
-                    return _requestContent;
+                    requestContent = _requestContent;
                 }
-
-                if (_stringRequestContent != null)
+                else if (_stringRequestContent != null)
                 {
-                    var requestContent = new StringContent(_stringRequestContent);
-                    return requestContent;
+                    requestContent = new StringContent(_stringRequestContent);
                 }
-
-                if (_jsonRequestContent != null)
+                else if (_jsonRequestContent != null)
                 {
-                    var requestContent = new StringContent(System.Text.Json.JsonSerializer.Serialize(_jsonRequestContent));
+                    requestContent = new StringContent(System.Text.Json.JsonSerializer.Serialize(_jsonRequestContent));
                     requestContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    return requestContent;
                 }
-
-                if (_xmlRequestContent != null)
+                else if (_xmlRequestContent != null)
                 {
                     var serializer = new XmlSerializer(_xmlRequestContent.GetType());
                     string xml;
@@ -361,13 +366,23 @@ namespace Zirpl.FluentRestClient
                         }
                     }
 
-                    var requestContent = new StringContent(xml);
+                    requestContent = new StringContent(xml);
                     requestContent.Headers.ContentType = new MediaTypeHeaderValue("application/xml");
-                    return requestContent;
                 }
             }
 
-            return null;
+            if (requestContent == null
+                && _requestHeaders.Any())
+            {
+                requestContent = new StringContent("");
+            }
+
+            foreach (var requestHeader in _requestHeaders)
+            {
+                requestContent.Headers.Add(requestHeader.Key, requestHeader.Value);
+            }
+
+            return requestContent;
         }
         
         public T ParseJsonResponse<T>()
