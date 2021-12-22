@@ -5,6 +5,7 @@ public class MyRestApiClient : RestApiClientBase
 {
   protected override HttpClient CreateHttpClient()
   {
+    // set any default headers here such as basic auth or cookies
     return new HttpClient("https://restapiexample.com/");
   }
   
