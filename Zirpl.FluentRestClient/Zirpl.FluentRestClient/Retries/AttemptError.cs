@@ -1,9 +1,15 @@
 namespace Zirpl.FluentRestClient.Retries
 {
     public class AttemptError
-    { 
-        public int AttemptNumber { get; set; }
-        public Exception Exception { get; set; }
+    {
+        public AttemptError(int attemptNumber, Exception exception)
+        {
+            AttemptNumber = attemptNumber;
+            Exception = exception;
+        }
+
+        public int AttemptNumber { get; }
+        public Exception Exception { get; }
 
         public override string ToString()
         {

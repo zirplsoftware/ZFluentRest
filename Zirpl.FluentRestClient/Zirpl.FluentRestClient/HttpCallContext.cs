@@ -9,22 +9,22 @@ namespace Zirpl.FluentRestClient
 {
     public class HttpCallContext : IHttpCallContext
     {
-        private readonly HttpClient? _httpClient;
+        private readonly HttpClient _httpClient;
         private readonly StringBuilder _urlBuilder;
         private bool _hasAddedUrlParameter;
         
-        public HttpCallContext(HttpClient? httpClient)
+        public HttpCallContext(HttpClient httpClient)
         {
             _httpClient = httpClient;
             _urlBuilder = new StringBuilder();
         }
 
         public string Url => $"{_httpClient.BaseAddress}{_urlBuilder}";
+        public string HttpRequestBody { get; private set; }
+        public bool LogRequestContent { get; private set; }
         public HttpResponseMessage HttpResponseMessage { get; private set; }
         public HttpStatusCode? HttpResponseStatusCode => HttpResponseMessage?.StatusCode;
         public string HttpResponseBody { get; private set; }
-        public string HttpRequestBody { get; private set; }
-        public bool LogRequestContent { get; private set; }
 
 
         public void Get(int? attempts = null, IUnsuccessfulHttpStatusCodeHandler? handler = null)
@@ -152,16 +152,16 @@ namespace Zirpl.FluentRestClient
         }
 
 
-        private void DoPost(HttpContent? requestContent, bool logRequestContent, int? attempts, IUnsuccessfulHttpStatusCodeHandler? handler)
+        private async Task DoPost(HttpContent requestContent, bool logRequestContent, int? attempts, IUnsuccessfulHttpStatusCodeHandler? handler)
         {
             LogRequestContent = logRequestContent;
             try
             {
-                var action = new Action<int>(i =>
+                var action = new Action<int>(async i =>
                 {
                     var url = _urlBuilder.ToString();
                     this.GetLog().Debug($"Calling POST to API:{url}");
-                    HttpRequestBody = requestContent?.ReadAsStringAsync().Result;
+                    HttpRequestBody = await requestContent.ReadAsStringAsync();
                     if (logRequestContent)
                     {
                         this.GetLog().Trace("HttpRequestBody: " + HttpRequestBody);

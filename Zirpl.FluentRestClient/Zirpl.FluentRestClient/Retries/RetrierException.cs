@@ -13,16 +13,19 @@ namespace Zirpl.FluentRestClient.Retries
         //    http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dncscol/html/csharp07192001.asp
         //
 
-        public RetrierException()
+        public RetrierException(AttemptError[] errors)
         {
+            Errors = errors;
         }
 
-        public RetrierException(string message) : base(message)
+        public RetrierException(AttemptError[] errors, string message) : base(message)
         {
+            Errors = errors;
         }
 
-        public RetrierException(string message, Exception inner) : base(message, inner)
+        public RetrierException(AttemptError[] errors, string message, Exception inner) : base(message, inner)
         {
+            Errors = errors;
         }
 
         protected RetrierException(
@@ -31,7 +34,7 @@ namespace Zirpl.FluentRestClient.Retries
         {
         }
 
-        public AttemptError[] Errors { get; set; }
+        public AttemptError[] Errors { get; }
 
         public override string ToString()
         {

@@ -2,9 +2,17 @@ namespace Zirpl.FluentRestClient.Retries
 {
     public class PostAttemptReport
     {
-        public int AttemptNumber { get; set; }
-        public int MaxAttempts { get; set; }
-        public bool WasSuccessful { get; set; }
-        public Exception? Exception { get; set; }
+        public PostAttemptReport(int attemptNumber, int maxAttempts, bool wasSuccessful, Exception? exception)
+        {
+            AttemptNumber = attemptNumber;
+            MaxAttempts = maxAttempts;
+            WasSuccessful = wasSuccessful;
+            Exception = exception;
+        }
+
+        public int AttemptNumber { get; }
+        public int MaxAttempts { get; }
+        public bool WasSuccessful { get; }
+        public Exception? Exception { get; }
     }
 }
