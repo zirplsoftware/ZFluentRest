@@ -129,7 +129,7 @@ namespace Zirpl.FluentRestClient
 
         public RestApiCallContext WithRequestHeader()
         {
-            throw new NotImplementedException();
+            
         }
 
         public RestApiCallContext WithCancellationToken(CancellationToken cancellationToken)
@@ -272,7 +272,7 @@ namespace Zirpl.FluentRestClient
             }
             catch (Exception e)
             {
-                throw new RestApiException(this, "Unexpected error during Post operation", e);
+                throw new RestApiException(this, "Unexpected error during Put operation", e);
             }
 
             return this;
@@ -319,7 +319,7 @@ namespace Zirpl.FluentRestClient
             }
             catch (Exception e)
             {
-                throw new RestApiException(this, "Unexpected error during Post operation", e);
+                throw new RestApiException(this, "Unexpected error during Delete operation", e);
             }
 
             return this;
