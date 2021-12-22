@@ -30,7 +30,7 @@ namespace Zirpl.FluentRestClient
             }
         }
 
-        protected HttpClient? HttpClient
+        protected HttpClient HttpClient
         {
             get
             {
@@ -43,7 +43,7 @@ namespace Zirpl.FluentRestClient
             }
         }
 
-        protected abstract HttpClient? CreateHttpClient();
+        protected abstract HttpClient CreateHttpClient();
 
         protected virtual RestApiCallContext CreateCallContext()
         {
