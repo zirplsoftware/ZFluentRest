@@ -19,6 +19,7 @@ namespace Zirpl.FluentRestClient
         private bool _hasRequestContent = false;
         private int _retryCount = 0;
         private CancellationToken _cancellationToken;
+        private IRestApiCallLogger _logger;
 
         public RestApiCallContext(HttpClient httpClient)
         {
@@ -120,9 +121,10 @@ namespace Zirpl.FluentRestClient
             return this;
         }
 
-        public RestApiCallContext WithLogger(ILogger logger)
+        public RestApiCallContext WithLogger(IRestApiCallLogger logger)
         {
-            throw new NotImplementedException();
+            _logger = logger;
+            return this;
         }
 
         public RestApiCallContext WithRequestHeader()
@@ -153,8 +155,10 @@ namespace Zirpl.FluentRestClient
                 var action = new Func<int, Task>(async i =>
                 {
                     var url = _urlBuilder.ToString();
+                    _logger?.Log($"Calling GET on {url}");
                     HttpResponseMessage = await _httpClient.GetAsync(url, _cancellationToken);
                     HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
+                    _logger?.Log($"HTTPResponseBody: {HttpResponseBody}");
                     AssertSuccessfulStatusCode();
                 });
 
@@ -194,10 +198,13 @@ namespace Zirpl.FluentRestClient
                 var action = new Func<int, Task>(async i =>
                 {
                     var url = _urlBuilder.ToString();
+                    _logger?.Log($"Calling POST on {url}");
                     var requestContent = GetRequestContent();
                     HttpRequestBody = await requestContent.ReadAsStringAsync(_cancellationToken);
+                    _logger?.Log($"HTTPRequestBody: {HttpRequestBody}");
                     HttpResponseMessage = await _httpClient.PostAsync(url, requestContent, _cancellationToken);
                     HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
+                    _logger?.Log($"HTTPResponseBody: {HttpResponseBody}");
                     AssertSuccessfulStatusCode();
                 });
 
@@ -237,10 +244,13 @@ namespace Zirpl.FluentRestClient
                 var action = new Func<int, Task>(async i =>
                 {
                     var url = _urlBuilder.ToString();
+                    _logger?.Log($"Calling PUT on {url}");
                     var requestContent = GetRequestContent();
                     HttpRequestBody = await requestContent.ReadAsStringAsync(_cancellationToken);
+                    _logger?.Log($"HTTPRequestBody: {HttpRequestBody}");
                     HttpResponseMessage = await _httpClient.PutAsync(url, requestContent, _cancellationToken);
                     HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
+                    _logger?.Log($"HTTPResponseBody: {HttpResponseBody}");
                     AssertSuccessfulStatusCode();
                 });
 
@@ -284,8 +294,10 @@ namespace Zirpl.FluentRestClient
                 var action = new Func<int, Task>(async i =>
                 {
                     var url = _urlBuilder.ToString();
+                    _logger?.Log($"Calling DELETE on {url}");
                     HttpResponseMessage = await _httpClient.DeleteAsync(url, _cancellationToken);
                     HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
+                    _logger?.Log($"HTTPResponseBody: {HttpResponseBody}");
                     AssertSuccessfulStatusCode();
                 });
 
@@ -325,10 +337,13 @@ namespace Zirpl.FluentRestClient
                 var action = new Func<int, Task>(async i =>
                 {
                     var url = _urlBuilder.ToString();
+                    _logger?.Log($"Calling PATCH on {url}");
                     var requestContent = GetRequestContent();
                     HttpRequestBody = await requestContent.ReadAsStringAsync(_cancellationToken);
+                    _logger?.Log($"HTTPRequestBody: {HttpRequestBody}");
                     HttpResponseMessage = await _httpClient.PatchAsync(url, requestContent, _cancellationToken);
                     HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
+                    _logger?.Log($"HTTPResponseBody: {HttpResponseBody}");
                     AssertSuccessfulStatusCode();
                 });
 
