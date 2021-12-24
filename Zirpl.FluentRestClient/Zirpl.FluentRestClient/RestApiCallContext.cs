@@ -9,18 +9,19 @@ namespace Zirpl.FluentRestClient
 {
     public class RestApiCallContext
     {
-        private readonly HttpClient _httpClient;
         private readonly StringBuilder _urlBuilder;
+        private readonly IDictionary<string, string[]> _requestHeaders;
+        private HttpClient? _httpClient;
         private bool _hasAddedUrlParameter;
-        private HttpContent _requestContent = null;
-        private string _stringRequestContent = null;
-        private object _jsonRequestContent = null;
-        private object _xmlRequestContent = null;
+        private HttpContent? _requestContent = null;
+        private string? _stringRequestContent = null;
+        private object? _jsonRequestContent = null;
+        private object? _xmlRequestContent = null;
         private bool _hasRequestContent = false;
         private int _retryCount = 0;
         private CancellationToken _cancellationToken;
-        private IRestApiCallLogger _logger;
-        private IDictionary<string, string[]> _requestHeaders;
+        private IRestApiCallLogger? _logger;
+        private AuthenticationHeaderValue _authenticationHeaderValue = null;
 
         public RestApiCallContext(HttpClient httpClient)
         {
@@ -29,11 +30,17 @@ namespace Zirpl.FluentRestClient
             _requestHeaders = new Dictionary<string, string[]>();
         }
 
-        public string Url => $"{_httpClient.BaseAddress}{_urlBuilder}";
-        public string HttpRequestBody { get; private set; }
-        public HttpResponseMessage HttpResponseMessage { get; private set; }
+        public string Url => $"{_httpClient?.BaseAddress}{_urlBuilder}";
+        public string? HttpRequestBody { get; private set; }
+        public HttpResponseMessage? HttpResponseMessage { get; private set; }
         public HttpStatusCode? HttpResponseStatusCode => HttpResponseMessage?.StatusCode;
-        public string HttpResponseBody { get; private set; }
+        public string? HttpResponseBody { get; private set; }
+
+        public RestApiCallContext WithHttpClient(HttpClient client)
+        {
+            _httpClient = client;
+            return this;
+        }
         
         public RestApiCallContext WithUrlSegment<T>(T relativeUrl)
         {
@@ -137,7 +144,7 @@ namespace Zirpl.FluentRestClient
         public RestApiCallContext WithBasicAuthentication(string username, string password)
         {
             var basicAuthenticationHeaderValue = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{username}:{password}"));
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", basicAuthenticationHeaderValue);
+            _authenticationHeaderValue = new AuthenticationHeaderValue("Basic", basicAuthenticationHeaderValue);
             return this;
         }
 
@@ -161,15 +168,29 @@ namespace Zirpl.FluentRestClient
 
             try
             {
-                var action = new Func<int, Task>(async i =>
+                var url = _urlBuilder.ToString();
+                _logger?.Log($"Calling GET on {url}");
+
+                Func<int, Task>? action = null;
+                if (_httpClient != null)
                 {
-                    var url = _urlBuilder.ToString();
-                    _logger?.Log($"Calling GET on {url}");
-                    HttpResponseMessage = await _httpClient.GetAsync(url, _cancellationToken);
-                    HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
-                    _logger?.Log($"HTTPResponseBody: {HttpResponseBody}");
-                    AssertSuccessfulStatusCode();
-                });
+                    _httpClient.DefaultRequestHeaders.Authorization = _authenticationHeaderValue;
+                    action = async i =>
+                    {
+                        HttpResponseMessage = await _httpClient.GetAsync(url, _cancellationToken);
+                    };
+                }
+                else
+                {
+                    action = async i =>
+                    {
+                        using (var httpClient = new HttpClient())
+                        {
+                            httpClient.DefaultRequestHeaders.Authorization = _authenticationHeaderValue;
+                            HttpResponseMessage = await httpClient.GetAsync(url, _cancellationToken);
+                        }
+                    };
+                }
 
                 if (_retryCount > 0)
                 {
@@ -385,7 +406,7 @@ namespace Zirpl.FluentRestClient
             return requestContent;
         }
         
-        public T ParseJsonResponse<T>()
+        public async Task<T> ParseJsonResponse<T>()
         {
             if (HttpResponseMessage == null)
             {
@@ -394,7 +415,9 @@ namespace Zirpl.FluentRestClient
 
             try
             {
-                return System.Text.Json.JsonSerializer.Deserialize<T>(HttpResponseBody);
+                HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
+                _logger?.Log($"HTTPResponseBody: {HttpResponseBody}");
+                return HttpResponseBody == null ? default(T) : System.Text.Json.JsonSerializer.Deserialize<T>(HttpResponseBody);
             }
             catch (RestApiException)
             {
@@ -406,7 +429,7 @@ namespace Zirpl.FluentRestClient
             }
         }
 
-        public T ParseXmlResponse<T>()
+        public async Task<T> ParseXmlResponse<T>()
         {
             if (HttpResponseMessage == null)
             {
@@ -415,6 +438,12 @@ namespace Zirpl.FluentRestClient
 
             try
             {
+                HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
+                _logger?.Log($"HTTPResponseBody: {HttpResponseBody}");
+                if (HttpResponseBody == null)
+                {
+                    return default(T);
+                }
                 var serializer = new XmlSerializer(typeof(T));
                 using (var responseBodyReader = new StringReader(HttpResponseBody))
                 {
@@ -434,7 +463,7 @@ namespace Zirpl.FluentRestClient
             }
         }
 
-        public T ParseResponse<T>(IHttpResponseParser<T> parser)
+        public async Task<T> ParseResponse<T>(IHttpResponseParser<T> parser)
         {
             if (HttpResponseMessage == null)
             {
@@ -443,6 +472,8 @@ namespace Zirpl.FluentRestClient
 
             try
             {
+                HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
+                _logger?.Log($"HTTPResponseBody: {HttpResponseBody}");
                 return parser.ParseResponse(this);
             }
             catch (RestApiException)
@@ -455,8 +486,10 @@ namespace Zirpl.FluentRestClient
             }
         }
 
-        public string GetResponseText()
+        public async Task<string> GetResponseText()
         {
+            HttpResponseBody = await HttpResponseMessage.Content.ReadAsStringAsync(_cancellationToken);
+            _logger?.Log($"HTTPResponseBody: {HttpResponseBody}");
             return HttpResponseBody;
         }
 
